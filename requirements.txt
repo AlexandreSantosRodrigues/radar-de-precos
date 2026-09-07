@@ -1,0 +1,8 @@
+gspread==6.1.2
+google-auth==2.29.0
+pandas==2.2.2
+requests==2.31.0
+beautifulsoup4==4.12.3
+lxml==5.2.1
+rapidfuzz==3.9.3
+python-dotenv==1.0.1
