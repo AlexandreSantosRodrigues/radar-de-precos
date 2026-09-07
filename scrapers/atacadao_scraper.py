@@ -59,49 +59,26 @@ class AtacadaoScraper(BaseScraper):
 
         return self.montar_linha(nome, preco, url_fonte=url)
 
-    def _gerar_dados_simulados(self) -> list:
-        """
-        Gera dados simulados realistas para demonstração do pipeline.
-        Usado quando o site bloqueia o scraping ou está indisponível.
-        Os preços são baseados em variações realistas de mercado.
-        """
-        print("  🎲 Usando dados simulados para o Atacadão (modo portfólio)")
+   def _gerar_dados_simulados(self) -> list:
+    """Gera dados simulados usando os produtos do próprio catálogo."""
+    print("  🎲 Usando dados simulados para o Atacadão (modo portfólio)")
+    linhas = []
+    for sku in self.catalogo:
+        nome = sku.get("produto", "")
+        preco_proprio = float(str(sku.get("preco_proprio", 0)).replace(",", ".") or 0)
+        if not nome or preco_proprio == 0:
+            continue
+        # Simula preço do concorrente: entre 85% e 105% do seu preço
+        import random
+        fator = random.uniform(0.85, 1.05)
+        preco_concorrente = round(preco_proprio * fator, 2)
+        linha = self.montar_linha(nome, preco_concorrente, url_fonte=self.BASE_URL)
+        if linha:
+            linhas.append(linha)
+    return linhas
 
-        precos_base = {
-            "Arroz Tipo 1 Camil 5kg":         (21.90, 19.90),
-            "Feijão Preto Combrasil 1kg":      (7.90,  None),
-            "Óleo de Soja Soya 900ml":         (5.49,  None),
-            "Leite Integral Italac 1L":        (3.99,  None),
-            "Açúcar Refinado União 1kg":       (3.89,  None),
-            "Café Torrado e Moído Pilão 500g": (17.90, 15.90),
-        }
-
-        linhas = []
-        for nome, (preco_reg, preco_promo) in precos_base.items():
-            variacao = random.uniform(0.95, 1.05)
-            preco_final = round(preco_reg * variacao, 2)
-            promo_final = round(preco_promo * variacao, 2) if preco_promo else None
-
-            linha = self.montar_linha(nome, preco_final, promo_final, url_fonte=self.BASE_URL)
-            if linha:
-                linhas.append(linha)
-
-        return linhas
-
-    def coletar(self) -> list:
-        """Método principal: tenta scraping real, fallback para simulado."""
-        print(f"\n🛒 Iniciando coleta: {self.nome_concorrente}")
-        linhas = []
-
-        for nome, url in self.PRODUTOS_ALVO:
-            print(f"  🔍 Buscando: {nome}")
-            linha = self.coletar_produto(nome, url)
-            if linha:
-                linhas.append(linha)
-
-        if not linhas:
-            print("  ⚠️  Coleta real falhou. Ativando modo simulado...")
-            linhas = self._gerar_dados_simulados()
-
-        print(f"  📦 Total coletado: {len(linhas)} produto(s)")
-        return linhas
+def coletar(self) -> list:
+    print(f"\n🛒 Iniciando coleta: {self.nome_concorrente}")
+    linhas = self._gerar_dados_simulados()
+    print(f"  📦 Total coletado: {len(linhas)} produto(s)")
+    return linhas
